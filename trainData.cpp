@@ -122,14 +122,14 @@ void Traindata::multMatrx()
     {
         for (size_t j = 0; j < 2; j++)
         {
-        matrixMult[i][j] = 0;
-            for (size_t k = 0; k < 2; k++)
-                {
-                    a = mfreeVarT[i][k];
-                    b = mfreeVar[k][j];
-                }
-        matrixMult[i][j] = a*b;
-        cout << matrixMult[i][j] << " ";
+	        matrixMult[i][j] = 0;
+	            for (size_t k = 0; k < 2; k++)
+	                {
+	                    a = mfreeVarT[i][k];
+	                    b = mfreeVar[k][j];
+	                }
+        	matrixMult[i][j] = a*b;
+        	cout << matrixMult[i][j] << " ";
         }
     }
 }
