@@ -7,154 +7,151 @@
 #include <cmath>
 #include <iterator>
 #include <algorithm>
+#include <sstream>
+
 using namespace std;
 Traindata::Traindata(char fileName[])
 {
-    string line; // чтение из файла
-    char * cstr = new char [line.length()+1];
+    freeVar_number = 2;
+    string line, buf;
+    std::vector<string> tokens;
+    std::vector<int> tempCols;
+        rows = 0,
+        cols = 0;
+
     ifstream readFile;
     readFile.open(fileName, ios_base::out);
-    if (!readFile.is_open())
-    std::cout <<	 "ERROR! " << fileName << " isnt open!" << endl;
-    else
-	    while (getline(readFile,line))
-	    {
-	        strcpy (cstr, line.c_str());
-	        char * chek = std::strtok (cstr,"\t");
-	        chek = strtok(NULL,"\t");
-	        size_t tempTime = std::atoi(cstr);
-	        size_t tempCheck = std::atoi(chek);
-	        inputTime.push_back(tempTime);      // запись в вектор времени
-	        avgChek.push_back(tempCheck);       // зпись в вектор среднего чека
-	    }
-    inputDataArraySize = avgChek.size();
-    float* temp = new float[inputDataArraySize];
-    for (size_t i = 0; i < inputDataArraySize; i++)
-    {
-        temp[i] = avgChek[i]*0.05;
-        profit.push_back(temp[i]);          // запись в вектор прибыли
-    }
+        if (!readFile.is_open())
+            std::cout << "ERROR! " << fileName << " isnt open!" << endl;
+        else
+            while(getline(readFile,line))
+            {
+                stringstream ss(line);
+                while (ss >> buf)
+                {
+                    tokens.push_back(buf);
+                }
+                rows++;
+                tempCols.push_back(std::count(line.begin(),line.end(),'\t')+1);
+                cols = *std::max_element(tempCols.begin(), tempCols.end());
+            }
     readFile.close();
+
+    int s = tokens.size();
+    float *generalData = new float[s];
+    for (int i = 0; i < s; i++)
+        {
+            generalData[i] = 0;
+            generalData[i] = atof(tokens[i].c_str());
+        }
+
+    dataTable = new float*[rows];
+    for (int i = 0; i < rows; i++)
+        dataTable[i] = new float[cols];
+
+    int k = 0;
+    for (int i = 0; i < rows; i++)
+        for (int j = 0; j < cols; j++)
+        {
+            dataTable[i][j] = 0;
+            dataTable[i][j] = generalData[k];
+            k++;
+        }
+
+    mfreeVar = new float*[rows];
+    for (int i = 0; i < rows; i++)
+        mfreeVar[i] = new float[freeVar_number+1];
+    for (int i = 0; i < rows; i++)
+        for (int j = 0; j < freeVar_number+1; j++)
+        {
+            mfreeVar[i][j] = 0;
+        }
+
+    mfreeVarT = new float*[freeVar_number+1];
+    for (int i = 0; i < freeVar_number+1; i++)
+        mfreeVarT[i] = new float[rows];
+    for (int i = 0; i < freeVar_number+1; i++)
+        for (int j = 0; j < rows; j++)
+        {
+            mfreeVar[i][j] = 0;
+        }
+
+    matrixMult = new float*[freeVar_number+1];
+    for (int i = 0; i < freeVar_number+1; i++)
+        matrixMult [i] = new float[freeVar_number+1];
+    for (int i = 0; i < freeVar_number+1; i++)
+        for (int j = 0; j < freeVar_number+1; j++)
+        {
+            matrixMult[i][j] = 0;
+        }
+
+    delete [] generalData;
+    generalData = nullptr;
 }
 Traindata::~Traindata()
 {
 }
-void Traindata::normData()
+
+void Traindata::dataVectors()
 {
-    float* tempProfit = new float[inputDataArraySize];
-    float* tempAvgchek = new float[inputDataArraySize];
-    float* tempTime = new float[inputDataArraySize];
-    for (size_t i = 0; i < inputDataArraySize; i++)
+    float   time_Element,
+            customer_Element;
+    for (int i = 0;  i < rows; i++)
     {
-        tempTime[i] = 0;
-        timeNorm.push_back(i);
-    }
-    std::vector<float>:: const_iterator avgchekMax = max_element(avgChek.begin(), avgChek.end());
-    std::vector<float>:: const_iterator avgchekMin = min_element(avgChek.begin(), avgChek.end());
-    std::vector<float>:: const_iterator profitMax = max_element(profit.begin(), profit.end());
-    std::vector<float>:: const_iterator profitMin = min_element(profit.begin(), profit.end());
-    std::vector<float>:: const_iterator timeNormMin = min_element(timeNorm.begin(), timeNorm.end());
-    std::vector<float>:: const_iterator timeNormMax = max_element(timeNorm.begin(), timeNorm.end());
-    for (size_t i = 0; i < inputDataArraySize; i++)
-    {
-        tempProfit[i] = (profit[i] - *profitMin)/(*profitMax - *profitMin);
-        tempAvgchek[i] = (avgChek[i] - *avgchekMin)/(*avgchekMax - *avgchekMin);
-        tempTime[i] = (timeNorm[i] - *timeNormMin)/(*timeNormMax - *timeNormMin);
-        profitNorm.push_back(tempProfit[i]);
-        avgchekNorm.push_back(tempAvgchek[i]);
-        timeNorm[i] = tempTime[i];
-    }
-    delete [] tempAvgchek;
-    delete [] tempProfit;
-    delete [] tempTime;
-}
-/* Матрица сврбодной переменной*/
-void Traindata::freeVar()
-{
-    mfreeVar = new float*[inputDataArraySize];
-    for (size_t i = 0; i < inputDataArraySize; i++)
-        mfreeVar[i] = new float[2];
-    for (size_t i = 0; i < inputDataArraySize; i++)
-    {
-        for (size_t j = 0; j < 2; j++)
-        {
-            mfreeVar[i][j] = 1;
-        }
-    }
-    for (size_t i = 0; i < inputDataArraySize; i++)
-    {
-        for (size_t j = 0; j < 2; j++)
-        {
-            mfreeVar[i][1] = timeNorm[i];
-        }
-    }
-}
-    /* Транспонированиая Матрица сврбодной переменной*/
-void Traindata::freeVarT()
-{
-    mfreeVarT = new float*[2];
-    for (size_t i = 0; i < 2; i++)
-        mfreeVarT[i] = new float[inputDataArraySize];
-    for (size_t i = 0; i < 2; i++)
-    {
-        for (size_t j = 0; j < inputDataArraySize; j++)
-        {
-            mfreeVarT[i][j] = 1;
-        }
-    }
-    for (size_t i = 0; i < 2; i++)
-    {
-        for (size_t j = 0; j < inputDataArraySize; j++)
-        {
-            mfreeVarT[1][j] = timeNorm[j];
-        }
+        customer_Element = dataTable[i][2];
+        time_Element = i;
+        customer.push_back(customer_Element);
+        inputTime.push_back(time_Element);
     }
 
 }
-    /* Перемножение матриц (tranA*A) */
+
+void Traindata::normData()
+{
+    std::vector<float>:: const_iterator customer_Max = max_element(customer.begin(), customer.end());
+    std::vector<float>:: const_iterator customer_Min = min_element(customer.begin(), customer.end());
+    std::vector<float>:: const_iterator inputTime_Max = max_element(inputTime.begin(), inputTime.end());
+    std::vector<float>:: const_iterator inputTime_Min = min_element(inputTime.begin(), inputTime.end());
+
+    for (int i = 0;  i < rows; i++)
+    {
+        timeNorm        .push_back((inputTime[i] - *inputTime_Min)/(*inputTime_Max-*inputTime_Min));
+        customerNorm    .push_back((customer[i] - *customer_Min)/(*customer_Max -*customer_Min));
+    }
+}
+
+void Traindata::freeVar()
+{
+    for (int i = 0; i < rows; i++)
+    {
+        mfreeVar[i][0] = 1;
+        mfreeVar[i][1] = timeNorm[i];
+        mfreeVar[i][2] = customerNorm[i];
+    }
+}
+
+void Traindata::freeVarT()
+{
+    for (int i = 0; i < rows; i++)
+    {
+        mfreeVarT[0][i] = 1;
+        mfreeVarT[1][i] = timeNorm[i];
+        mfreeVarT[2][i] = customerNorm[i];
+    }
+}
+
 void Traindata::multMatrx()
 {
-    float a,b;
-    matrixMult = new float*[2];
-    for (size_t i = 0; i < 2; i++)
-        matrixMult[i] = new float[2];
-    for (size_t i = 0; i < 2; i++)
+    int k = 0;
+    for (int i = 0; i < freeVar_number+1; i++)
     {
-        for (size_t j = 0; j < 2; j++)
+        ++k;
+        for (int j = 0; j < freeVar_number+1; j++)
         {
-	        matrixMult[i][j] = 0;
-	        for (size_t k = 0; k < 2; k++)
-	        	{
-	            	a = mfreeVarT[i][k];
-	                b = mfreeVar[k][j];
-	            }
-        	matrixMult[i][j] = a*b;
-        	cout << matrixMult[i][j] << " ";
+            matrixMult[i][j] += mfreeVarT[i][k]*mfreeVar[k][j];
+            cout << matrixMult[i][j] << "\t";
         }
+        cout << endl;
     }
-}
-void Traindata::determ()
-{
-    float a,b,c,d;
-    if (sizeof(matrixMult)==4)
-    {
-        for (size_t i = 0; i < 2; i++)
-            {
-                for (size_t j = 0; j < 2; j++)
-                {
-                    a = matrixMult[0][0];
-                    b = matrixMult[1][1];
-                    a = matrixMult[0][1];
-                    a = matrixMult[1][0];
-                    determinant = a*b-c*d;
-                }
-            }
-    }
-    else
-    {
-        cout << " THIS fucking bullshit! ";
-    }
-}
-void Traindata::linReg()
-{
+
 }
