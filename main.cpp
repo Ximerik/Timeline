@@ -7,10 +7,11 @@ int main()
 {
     char fileName[] = "test.txt";
     Traindata obj(fileName);
+    obj.dataVectors();
     obj.normData();
     obj.freeVar();
     obj.freeVarT();
     obj.multMatrx();
-    //obj.determ();
+    //obj.invrMatrx();
     return 0;
 }
